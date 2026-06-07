@@ -31,7 +31,10 @@ class TicTacToeModel(mlflow.pyfunc.PythonModel):
     def load_context(self, context):
         if "q_values_safetensors" in context.artifacts:
             tensors = load_file(context.artifacts["q_values_safetensors"])
-            self.q_values = {ast.literal_eval(k): v for k, v in tensors.items()}
+            self.q_values = {
+                ast.literal_eval(k): {i: float(v) for i, v in enumerate(arr) if not np.isnan(v)}
+                for k, arr in tensors.items()
+            }
         elif "q_values_pickle" in context.artifacts:
             with open(context.artifacts["q_values_pickle"], "rb") as f:
                 self.q_values = pickle.load(f)
@@ -54,17 +57,25 @@ class TicTacToeModel(mlflow.pyfunc.PythonModel):
     def _get_state(self, env: TicTacToe) -> tuple:
         return tuple(int(x) for x in env.board.reshape(-1))
 
-    def _get_action(self, game_state: TicTacToe) -> int:
+    def _get_action(self, game_state: TicTacToe) -> Dict:
         state_key = self._get_state(game_state)
         if state_key in self.q_values:
             actions_q_values = self.q_values[state_key]
             best_action = max(actions_q_values, key=actions_q_values.get)
-            return {"action": best_action, "q_value": float(actions_q_values[best_action])}
+            return {"action": int(best_action), "q_value": float(actions_q_values[best_action])}
         else:
             raise ValueError(f"Untrained game state encountered: {state_key}")
 
     def save(self, save_folder_path: Path | None):
-        tensors = {str(k): np.array(list(v.values()), dtype=np.float32) for k, v in self.q_values.items()}
+        # Actions are board positions 0-8. Store as a fixed 9-element array so
+        # action indices survive the round-trip (NaN = action not in Q-table).
+        MAX_ACTIONS = 9
+        tensors = {}
+        for state, action_vals in self.q_values.items():
+            arr = np.full(MAX_ACTIONS, np.nan, dtype=np.float32)
+            for action, val in action_vals.items():
+                arr[int(action)] = float(val)
+            tensors[str(state)] = arr
         file_size = sum(t.nbytes for t in tensors.values())
 
         if save_folder_path:
@@ -87,7 +98,10 @@ class TicTacToeModel(mlflow.pyfunc.PythonModel):
         filepath = os.path.join(load_folder_path or ".", "Q_values.safetensors")
         try:
             tensors = load_file(filepath)
-            self.q_values = {ast.literal_eval(k): v for k, v in tensors.items()}
+            self.q_values = {
+                ast.literal_eval(k): {i: float(v) for i, v in enumerate(arr) if not np.isnan(v)}
+                for k, arr in tensors.items()
+            }
             logging.info(
                 "Loaded Q-values model",
                 extra={
