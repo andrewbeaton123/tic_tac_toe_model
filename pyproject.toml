@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tic_tac_toe_model"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow",
+    "numpy",
+    "safetensors",
+    "tic_tac_toe_game @ git+https://github.com/andrewbeaton123/tic_tac_toe_game.git",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
