@@ -1,0 +1,28 @@
+# Model artifacts — large binary files, not useful for code understanding
+*.safetensors
+*.pkl
+*.pt
+*.pth
+
+# MLflow run data
+mlruns/
+mlartifacts/
+
+# Virtual environments — dependency source code, not this project's code
+.venv/
+venv/
+env/
+
+# Test output and coverage reports
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Logs
+logs/
+*.log
+
+# OS / editor noise
+.DS_Store
+.idea/
+.vscode/
