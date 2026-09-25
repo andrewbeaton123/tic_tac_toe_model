@@ -8,7 +8,7 @@ from typing import Dict, List, Union
 import mlflow.pyfunc
 import numpy as np
 from mlflow.models import ModelSignature
-from mlflow.types.schema import ColSpec, Schema
+from mlflow.types.schema import Array, ColSpec, Schema
 from safetensors.numpy import load_file, save_file
 from tic_tac_toe_game import TicTacToe
 
@@ -126,7 +126,8 @@ class TicTacToeModel(mlflow.pyfunc.PythonModel):
     def get_model_signature(self) -> ModelSignature:
         input_schema = Schema([
             ColSpec("integer", "current_player"),
-            ColSpec("integer", "game_state", shape=(9,)),
+            # 9-element board, flattened row-major. ColSpec has no shape argument, so use an Array column.
+            ColSpec(Array("integer"), "game_state"),
         ])
         output_schema = Schema([
             ColSpec("integer", "action"),

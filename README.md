@@ -416,7 +416,7 @@ Returns the MLflow `ModelSignature` describing the predict interface:
 ```
 Inputs:
   current_player : integer
-  game_state     : integer[9]
+  game_state     : Array(integer)   (9 elements, row-major board)
 
 Outputs:
   action  : integer
